@@ -16,8 +16,36 @@
       "dest": "backend/app.py"
     },
     {
+      "src": "/css/(.*)",
+      "dest": "frontend/css/$1"
+    },
+    {
+      "src": "/js/(.*)",
+      "dest": "frontend/js/$1"
+    },
+    {
+      "src": "/report.html(.*)",
+      "dest": "frontend/pages/report.html$1"
+    },
+    {
+      "src": "/history.html(.*)",
+      "dest": "frontend/pages/history.html$1"
+    },
+    {
+      "src": "/dashboard.html(.*)",
+      "dest": "frontend/pages/dashboard.html$1"
+    },
+    {
+      "src": "/index.html(.*)",
+      "dest": "frontend/pages/index.html$1"
+    },
+    {
+      "src": "/",
+      "dest": "frontend/pages/index.html"
+    },
+    {
       "src": "/(.*)",
-      "dest": "frontend/$1"
+      "dest": "frontend/pages/index.html"
     }
   ]
 }

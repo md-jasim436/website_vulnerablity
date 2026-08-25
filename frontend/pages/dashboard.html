@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security Analytics Dashboard — Website Vulnerability Scanner</title>
+  <meta name="description" content="Aggregated security metrics, risk distribution charts, and recent scan activities.">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="/index.html" class="brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+        <span>VulnerabilityScanner<span style="color: var(--primary);">.io</span></span>
+      </a>
+      <nav>
+        <ul class="nav-links">
+          <li><a href="/index.html" class="nav-link">New Scan</a></li>
+          <li><a href="/dashboard.html" class="nav-link active">Dashboard</a></li>
+          <li><a href="/history.html" class="nav-link">Scan History</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="container">
+
+    <div class="flex-between flex-wrap gap-4 mb-6">
+      <div>
+        <h1 class="text-3xl font-bold text-primary-heading mb-1">Security Analytics Dashboard</h1>
+        <p class="text-secondary text-base">High-level threat intelligence metrics across all scanned web applications.</p>
+      </div>
+      <div>
+        <a href="/index.html" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          <span>Run New Scan</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Summary Metric Counters -->
+    <div class="grid-4-col mb-6">
+      <div class="card p-5 text-center">
+        <div class="stat-number text-primary" id="dash-total-scans">0</div>
+        <div class="stat-label">Total Scans Performed</div>
+      </div>
+      <div class="card p-5 text-center">
+        <div class="stat-number text-danger" id="dash-high-risk">0</div>
+        <div class="stat-label">High Risk Targets</div>
+      </div>
+      <div class="card p-5 text-center">
+        <div class="stat-number text-warning" id="dash-medium-risk">0</div>
+        <div class="stat-label">Medium Risk Targets</div>
+      </div>
+      <div class="card p-5 text-center">
+        <div class="stat-number text-success" id="dash-low-risk">0</div>
+        <div class="stat-label">Low Risk / Clean Targets</div>
+      </div>
+    </div>
+
+    <!-- Interactive Visualizations Grid -->
+    <div class="grid-2-col mb-6">
+      <!-- Chart 1: Risk Distribution -->
+      <div class="card">
+        <h2 class="card-title mb-1">Overall Risk Level Distribution</h2>
+        <p class="card-subtitle">Proportion of high, medium, and low risk web applications evaluated.</p>
+        <div style="position: relative; height: 280px;">
+          <canvas id="riskDistributionChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart 2: Vulnerabilities Breakdown -->
+      <div class="card">
+        <h2 class="card-title mb-1">Identified Security Issues Breakdown</h2>
+        <p class="card-subtitle">Aggregated distribution of vulnerability types detected.</p>
+        <div style="position: relative; height: 280px;">
+          <canvas id="vulnerabilitiesBarChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Scans Table -->
+    <div class="card">
+      <div class="flex-between mb-4">
+        <div>
+          <h2 class="card-title mb-1">Recent Security Scans</h2>
+          <p class="card-subtitle mb-0">Latest 10 target assessments executed.</p>
+        </div>
+        <a href="/history.html" class="btn btn-secondary btn-sm">View Full History &rarr;</a>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Target Application</th>
+              <th>Risk Level</th>
+              <th>Status</th>
+              <th>Timestamp</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="recent-scans-tbody">
+            <!-- Populated by dashboard.js -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div>Website Vulnerability Scanner &copy; 2026. For authorized educational & security testing only.</div>
+  </footer>
+
+  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Website Vulnerability Scanner — Security Assessment Platform</title>
+  <meta name="description" content="Automated website attack surface discovery, SQL injection testing, reflected XSS checks, HTTPS inspection, and security header audit.">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/components.css">
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header class="navbar">
+    <div class="nav-container">
+      <a href="/index.html" class="brand">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+        <span>VulnerabilityScanner<span style="color: var(--primary);">.io</span></span>
+      </a>
+      <nav>
+        <ul class="nav-links">
+          <li><a href="/index.html" class="nav-link active">New Scan</a></li>
+          <li><a href="/dashboard.html" class="nav-link">Dashboard</a></li>
+          <li><a href="/history.html" class="nav-link">Scan History</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="container">
+
+    <!-- Hero / Intro -->
+    <div class="mb-6">
+      <h1 class="text-3xl font-bold text-primary-heading mb-2">Automated Web Security Assessment</h1>
+      <p class="text-secondary text-base">
+        Discover attack surfaces, detect SQL injection patterns, identify reflected XSS flaws, audit HTTPS configurations, and inspect security headers with real-time feedback.
+      </p>
+    </div>
+
+    <div class="grid-2-col">
+      <!-- Left Column: Scan Configuration Form -->
+      <section class="card" id="scan-config-card">
+        <h2 class="card-title">Target Configuration</h2>
+        <p class="card-subtitle">Specify target domain and choose security assessment parameters.</p>
+
+        <form id="scan-form">
+          <!-- Target URL Input -->
+          <div class="form-group">
+            <label for="target-url" class="form-label">Target Website URL <span class="text-danger">*</span></label>
+            <input 
+              type="url" 
+              id="target-url" 
+              class="form-input" 
+              placeholder="https://example.com" 
+              required 
+              autocomplete="url"
+            >
+            <span class="text-xs text-muted mt-1 block">Enter full URL including protocol (e.g. <code>https://example.com</code> or <code>http://testphp.vulnweb.com</code>).</span>
+          </div>
+
+          <!-- Scope / Depth Selector -->
+          <div class="form-group">
+            <label class="form-label">Crawl Scope & Depth</label>
+            <div class="scope-options">
+              <label class="scope-option">
+                <input type="radio" name="depth" value="quick" checked>
+                <div class="scope-box">
+                  <div class="scope-title">Quick Scan</div>
+                  <div class="scope-desc">Max 5 pages. Fast surface reconnaissance.</div>
+                </div>
+              </label>
+              <label class="scope-option">
+                <input type="radio" name="depth" value="normal">
+                <div class="scope-box">
+                  <div class="scope-title">Normal Scan</div>
+                  <div class="scope-desc">Max 15 pages. Standard surface audit.</div>
+                </div>
+              </label>
+              <label class="scope-option">
+                <input type="radio" name="depth" value="deep">
+                <div class="scope-box">
+                  <div class="scope-title">Deep Scan</div>
+                  <div class="scope-desc">Max 30 pages. Comprehensive crawl.</div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Security Modules Selection -->
+          <div class="form-group">
+            <label class="form-label">Active Assessment Modules</label>
+            <div class="checkbox-grid">
+              <label class="checkbox-item">
+                <input type="checkbox" id="check-sql" checked>
+                <span>SQL Injection (SQLi)</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" id="check-xss" checked>
+                <span>Reflected XSS</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" id="check-https" checked>
+                <span>HTTPS & SSL/TLS Audit</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" id="check-headers" checked>
+                <span>Security Headers (CSP, HSTS)</span>
+              </label>
+              <label class="checkbox-item">
+                <input type="checkbox" id="check-cookies" checked>
+                <span>Cookie Security Flags</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Authorization Agreement -->
+          <div class="form-group consent-box">
+            <label class="checkbox-item">
+              <input type="checkbox" id="auth-consent" required checked>
+              <span class="text-sm">
+                I confirm that I own or have explicit authorization to assess this target web application.
+              </span>
+            </label>
+          </div>
+
+          <!-- Action Button -->
+          <button type="submit" id="start-scan-btn" class="btn btn-primary w-full">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            <span>Start Security Assessment</span>
+          </button>
+        </form>
+      </section>
+
+      <!-- Right Column: Live Terminal Console & Progress -->
+      <section class="card" id="terminal-card">
+        <div class="flex-between mb-3">
+          <div class="terminal-header-title">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="ml-2 font-mono text-xs text-secondary">live_scanner_stream.log</span>
+          </div>
+          <div class="terminal-actions">
+            <span id="scan-status-badge" class="badge badge-info">IDLE</span>
+            <button id="clear-terminal-btn" class="btn btn-secondary btn-sm" title="Clear Console">Clear</button>
+          </div>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div id="scan-progress-container" class="progress-bar-container mb-3" style="display: none;">
+          <div id="scan-progress-bar" class="progress-bar-fill" style="width: 0%;"></div>
+        </div>
+
+        <!-- Live Terminal Stream Box -->
+        <div id="terminal-logs" class="terminal-console">
+          <div class="terminal-line muted">// Ready for target assessment. Logs will stream here in real-time.</div>
+          <div class="terminal-line info">// Database: Supabase PostgreSQL connected.</div>
+          <div class="terminal-line">// Select scope and click 'Start Security Assessment' to begin.</div>
+        </div>
+
+        <!-- View Report CTA -->
+        <div class="mt-4 text-center">
+          <a id="view-report-btn" href="#" class="btn btn-primary" style="display: none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            <span>View Full Scan Report</span>
+          </a>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div>Website Vulnerability Scanner &copy; 2026. For authorized educational & security testing only.</div>
+  </footer>
+
+  <script type="module" src="/js/app.js"></script>
+  <script type="module" src="/js/scan.js"></script>
+</body>
+</html>
