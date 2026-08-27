@@ -49,14 +49,15 @@ function renderReport(scan) {
   document.getElementById('report-final-url').textContent = scan.final_url || scan.url;
 
   const riskLevel = (scan.risk_level || 'LOW').toUpperCase();
+  const riskScore = scan.risk_score || 0;
   const riskBadge = document.getElementById('report-risk-badge');
-  riskBadge.textContent = `${riskLevel} RISK`;
+  riskBadge.textContent = `${riskLevel} RISK${riskScore > 0 ? ` · ${riskScore}/100` : ''}`;
   if (riskLevel === 'HIGH') {
-    riskBadge.className = 'badge badge-high';
+    riskBadge.className = 'badge badge-high text-base px-3 py-1';
   } else if (riskLevel === 'MEDIUM') {
-    riskBadge.className = 'badge badge-medium';
+    riskBadge.className = 'badge badge-medium text-base px-3 py-1';
   } else {
-    riskBadge.className = 'badge badge-low';
+    riskBadge.className = 'badge badge-low text-base px-3 py-1';
   }
 
   const crawlRes = scan.crawl_results || {};
@@ -72,7 +73,10 @@ function renderReport(scan) {
   const xssCount = (findings.xss || []).length;
   const headerMissingCount = (findings.headers?.missing || []).length;
   const cookieInsecureCount = (findings.cookies?.insecure || []).length;
-  const totalFindings = sqlCount + xssCount + headerMissingCount + cookieInsecureCount;
+  const infoLeakCount = (findings.headers?.info_leaks || []).length;
+  const cspWarningCount = (findings.headers?.csp_warnings || []).length;
+  const httpsIssueCount = (!findings.https?.is_https || !findings.https?.certificate_valid || !findings.https?.redirects_to_https) ? 1 : 0;
+  const totalFindings = sqlCount + xssCount + headerMissingCount + cookieInsecureCount + infoLeakCount + cspWarningCount + httpsIssueCount;
   document.getElementById('stat-findings').textContent = totalFindings;
 
   // Render SQL Findings
@@ -89,6 +93,9 @@ function renderReport(scan) {
 
   // Render Cookie Security
   renderCookieSecurity(findings.cookies || {});
+
+  // Render Risk Factors breakdown (if available)
+  renderRiskFactors(scan.risk_factors || [], scan.risk_score || 0);
 
   // Render Discovered Attack Surface Links & Forms
   renderAttackSurface(crawlRes);
@@ -243,6 +250,26 @@ function renderSecurityHeaders(headersData) {
             <span class="finding-title">${escapeHtml(leak.header)}: <code>${escapeHtml(leak.value)}</code></span>
           </div>
           <p class="finding-desc">${escapeHtml(leak.recommendation)}</p>
+        </div>
+      `).join('');
+    }
+  }
+
+  // CSP Warnings
+  const cspWarnings = headersData.csp_warnings || [];
+  const cspContainer = document.getElementById('csp-warnings-container');
+  if (cspContainer) {
+    if (cspWarnings.length === 0) {
+      cspContainer.innerHTML = '<p class="text-muted">No dangerous CSP directives detected.</p>';
+    } else {
+      cspContainer.innerHTML = cspWarnings.map(w => `
+        <div class="finding-item ${w.severity === 'HIGH' ? 'danger' : 'warning'}">
+          <div class="finding-header">
+            <span class="badge badge-${w.severity === 'HIGH' ? 'high' : 'medium'}">${escapeHtml(w.severity)} RISK</span>
+            <span class="finding-title">Dangerous CSP Directive: <code>${escapeHtml(w.directive)}</code></span>
+          </div>
+          <p class="finding-desc">${escapeHtml(w.description)}</p>
+          <p class="finding-desc text-secondary">${escapeHtml(w.recommendation)}</p>
         </div>
       `).join('');
     }

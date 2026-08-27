@@ -90,8 +90,13 @@ def execute_scan_background(scan_id: str, target_url: str, depth: str, checks: d
             append_logs_to_supabase(scan_id, cookies_res.get("logs", []))
 
         # Step 7: Risk Engine Calculation
-        overall_risk = calculate_risk(findings)
-        complete_log = f"[{datetime.now().strftime('%H:%M:%S')}] SUCCESS Scan completed successfully! Overall Risk: {overall_risk}"
+        risk_result = calculate_risk(findings)
+        # risk_result is a dict: {level, score, factors}
+        risk_level = risk_result.get("level", "LOW") if isinstance(risk_result, dict) else str(risk_result)
+        risk_score = risk_result.get("score", 0) if isinstance(risk_result, dict) else 0
+        risk_factors = risk_result.get("factors", []) if isinstance(risk_result, dict) else []
+
+        complete_log = f"[{datetime.now().strftime('%H:%M:%S')}] SUCCESS Scan completed successfully! Overall Risk: {risk_level} (Score: {risk_score}/100)"
         append_logs_to_supabase(scan_id, [complete_log])
 
         # Final Supabase Persistence Update
@@ -100,7 +105,9 @@ def execute_scan_background(scan_id: str, target_url: str, depth: str, checks: d
             "title": crawl_results.get("title", ""),
             "crawl_results": crawl_results,
             "findings": findings,
-            "risk_level": overall_risk,
+            "risk_level": risk_level,
+            "risk_score": risk_score,
+            "risk_factors": risk_factors,
             "status": "COMPLETED",
             "completed_at": datetime.now().isoformat()
         }).eq("id", scan_id).execute()
