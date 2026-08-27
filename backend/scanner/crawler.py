@@ -1,10 +1,16 @@
 import re
 import logging
 from urllib.parse import urlparse, urljoin, parse_qs
-from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 from backend.config import Config
 
 logger = logging.getLogger(__name__)
+
+try:
+    from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
+    PLAYWRIGHT_AVAILABLE = True
+except ImportError:
+    PLAYWRIGHT_AVAILABLE = False
+    PlaywrightTimeoutError = Exception
 
 class PlaywrightCrawler:
     def __init__(self, target_url: str, depth: str = "quick"):
@@ -56,70 +62,74 @@ class PlaywrightCrawler:
         self._log(f"Starting web crawler for {self.target_url} (Depth: {self.depth}, Max Pages: {self.max_pages})")
         queue = [self.target_url]
 
-        try:
-            with sync_playwright() as p:
-                browser = p.chromium.launch(headless=Config.PLAYWRIGHT_HEADLESS)
-                context = browser.new_context(
-                    user_agent="Mozilla/5.0 (compatible; WebsiteVulnerabilityScanner/2.0)",
-                    ignore_https_errors=True
-                )
-                page = context.new_page()
-                page.set_default_timeout(Config.CRAWL_TIMEOUT_MS)
+        if not PLAYWRIGHT_AVAILABLE:
+            self._log("Playwright not installed. Using HTTP crawler fallback...", "WARN")
+            self._fallback_crawl(queue)
+        else:
+            try:
+                with sync_playwright() as p:
+                    browser = p.chromium.launch(headless=Config.PLAYWRIGHT_HEADLESS)
+                    context = browser.new_context(
+                        user_agent="Mozilla/5.0 (compatible; WebsiteVulnerabilityScanner/2.0)",
+                        ignore_https_errors=True
+                    )
+                    page = context.new_page()
+                    page.set_default_timeout(Config.CRAWL_TIMEOUT_MS)
 
-                while queue and len(self.visited) < self.max_pages:
-                    current_url = queue.pop(0)
-                    if current_url in self.visited:
-                        continue
+                    while queue and len(self.visited) < self.max_pages:
+                        current_url = queue.pop(0)
+                        if current_url in self.visited:
+                            continue
 
-                    self.visited.add(current_url)
-                    self._extract_query_params(current_url)
-                    self._log(f"Crawling page ({len(self.visited)}/{self.max_pages}): {current_url}")
+                        self.visited.add(current_url)
+                        self._extract_query_params(current_url)
+                        self._log(f"Crawling page ({len(self.visited)}/{self.max_pages}): {current_url}")
 
-                    try:
-                        page.goto(current_url, wait_until="domcontentloaded")
-                        if len(self.visited) == 1:
-                            self.final_url = page.url
-                            self.title = page.title() or "Untitled Page"
-                            self._log(f"Target page loaded. Title: '{self.title}'")
+                        try:
+                            page.goto(current_url, wait_until="domcontentloaded")
+                            if len(self.visited) == 1:
+                                self.final_url = page.url
+                                self.title = page.title() or "Untitled Page"
+                                self._log(f"Target page loaded. Title: '{self.title}'")
 
-                        # Extract forms with all input types
-                        form_elements = page.query_selector_all("form")
-                        for form in form_elements:
-                            action = form.get_attribute("action") or current_url
-                            method = (form.get_attribute("method") or "GET").upper()
-                            full_action = urljoin(current_url, action)
-                            inputs = self._extract_inputs_from_form_element(form, current_url)
-                            form_data = {
-                                "page_url": current_url,
-                                "action": full_action,
-                                "method": method,
-                                "inputs": inputs
-                            }
-                            if form_data not in self.forms:
-                                self.forms.append(form_data)
+                            # Extract forms with all input types
+                            form_elements = page.query_selector_all("form")
+                            for form in form_elements:
+                                action = form.get_attribute("action") or current_url
+                                method = (form.get_attribute("method") or "GET").upper()
+                                full_action = urljoin(current_url, action)
+                                inputs = self._extract_inputs_from_form_element(form, current_url)
+                                form_data = {
+                                    "page_url": current_url,
+                                    "action": full_action,
+                                    "method": method,
+                                    "inputs": inputs
+                                }
+                                if form_data not in self.forms:
+                                    self.forms.append(form_data)
 
-                        # Extract internal links
-                        anchors = page.query_selector_all("a[href]")
-                        for anchor in anchors:
-                            href = anchor.get_attribute("href")
-                            if href and not href.startswith("#") and not href.startswith("javascript:"):
-                                abs_url = urljoin(current_url, href)
-                                clean_url = abs_url.split("#")[0]
-                                if self._is_same_domain(clean_url) and clean_url not in self.visited and clean_url not in queue:
-                                    queue.append(clean_url)
+                            # Extract internal links
+                            anchors = page.query_selector_all("a[href]")
+                            for anchor in anchors:
+                                href = anchor.get_attribute("href")
+                                if href and not href.startswith("#") and not href.startswith("javascript:"):
+                                    abs_url = urljoin(current_url, href)
+                                    clean_url = abs_url.split("#")[0]
+                                    if self._is_same_domain(clean_url) and clean_url not in self.visited and clean_url not in queue:
+                                        queue.append(clean_url)
 
-                    except PlaywrightTimeoutError:
-                        self._log(f"Timeout crawling page: {current_url}", "WARN")
-                    except Exception as e:
-                        self._log(f"Error crawling {current_url}: {str(e)}", "WARN")
+                        except PlaywrightTimeoutError:
+                            self._log(f"Timeout crawling page: {current_url}", "WARN")
+                        except Exception as e:
+                            self._log(f"Error crawling {current_url}: {str(e)}", "WARN")
 
-                context.close()
-                browser.close()
-                self._log(f"Crawling completed. {len(self.visited)} pages crawled, {len(self.forms)} forms discovered.")
+                    context.close()
+                    browser.close()
+                    self._log(f"Crawling completed. {len(self.visited)} pages crawled, {len(self.forms)} forms discovered.")
 
-        except Exception as e:
-            self._log(f"Playwright browser engine encountered an issue: {str(e)}. Activating HTTP crawler fallback...", "WARN")
-            self._fallback_crawl(queue if queue else [self.target_url])
+            except Exception as e:
+                self._log(f"Playwright browser engine encountered an issue: {str(e)}. Activating HTTP crawler fallback...", "WARN")
+                self._fallback_crawl(queue if queue else [self.target_url])
 
         return {
             "target_url": self.target_url,
