@@ -12,17 +12,23 @@ def test_risk_engine_high_risk_sqli():
         "headers": {"missing": []},
         "cookies": {"insecure": []}
     }
-    assert calculate_risk(findings) == "HIGH"
+    result = calculate_risk(findings)
+    assert result["level"] == "HIGH"
 
 def test_risk_engine_high_risk_xss():
     findings = {
         "sql": [],
-        "xss": [{"type": "Reflected XSS", "severity": "MEDIUM"}],
+        "xss": [{"type": "Reflected XSS", "severity": "HIGH"},
+                {"type": "Reflected XSS", "severity": "HIGH"},
+                {"type": "Reflected XSS", "severity": "HIGH"},
+                {"type": "Reflected XSS", "severity": "HIGH"},
+                {"type": "Reflected XSS", "severity": "HIGH"}],
         "https": {"is_https": True},
         "headers": {"missing": []},
         "cookies": {"insecure": []}
     }
-    assert calculate_risk(findings) == "HIGH"
+    result = calculate_risk(findings)
+    assert result["level"] == "HIGH"
 
 def test_risk_engine_medium_risk_http():
     findings = {
@@ -32,17 +38,19 @@ def test_risk_engine_medium_risk_http():
         "headers": {"missing": []},
         "cookies": {"insecure": []}
     }
-    assert calculate_risk(findings) == "MEDIUM"
+    result = calculate_risk(findings)
+    assert result["level"] == "MEDIUM"
 
 def test_risk_engine_low_risk_clean():
     findings = {
         "sql": [],
         "xss": [],
         "https": {"is_https": True},
-        "headers": {"missing": ["Permissions-Policy"]},
+        "headers": {"missing": [{"header": "Permissions-Policy", "risk": "LOW"}]},
         "cookies": {"insecure": []}
     }
-    assert calculate_risk(findings) == "LOW"
+    result = calculate_risk(findings)
+    assert result["level"] == "LOW"
 
 def test_security_headers_structure():
     res = run_security_headers_scan("https://example.com")

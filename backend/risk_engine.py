@@ -22,11 +22,14 @@ class RiskEngine:
 
         risk_score = 0
         risk_factors = []
+        force_high = False  # SQLi/XSS always forces HIGH regardless of score
 
         # ── Critical: SQLi / XSS Findings ───────────────────────────────────
         if sql_findings:
-            sql_score = min(40, len(sql_findings) * 20)
+            # Any SQL injection = immediately HIGH risk
+            sql_score = min(40, 30 + len(sql_findings) * 5)
             risk_score += sql_score
+            force_high = True
             risk_factors.append({
                 "category": "SQL Injection",
                 "severity": "CRITICAL",
@@ -35,8 +38,10 @@ class RiskEngine:
             })
 
         if xss_findings:
-            xss_score = min(35, len(xss_findings) * 15)
+            # Any XSS = HIGH risk (score pushes above 70 threshold)
+            xss_score = min(40, 30 + len(xss_findings) * 5)
             risk_score += xss_score
+            force_high = True
             risk_factors.append({
                 "category": "Cross-Site Scripting (XSS)",
                 "severity": "HIGH",
@@ -157,7 +162,7 @@ class RiskEngine:
         # ── Clamp score to 0–100 and assign label ─────────────────────────────
         risk_score = min(100, max(0, risk_score))
 
-        if risk_score >= 70:
+        if force_high or risk_score >= 70:
             risk_level = "HIGH"
         elif risk_score >= 25:
             risk_level = "MEDIUM"
