@@ -317,6 +317,41 @@ function renderCookieSecurity(cookieData) {
   `;
 }
 
+function renderRiskFactors(factors, score) {
+  const container = document.getElementById('risk-factors-container');
+  if (!container) return;
+
+  if (!factors || factors.length === 0) {
+    container.innerHTML = '<p class="text-muted">No risk factors recorded for this scan.</p>';
+    return;
+  }
+
+  const scoreBarWidth = Math.min(100, score);
+  const scoreColor = score >= 70 ? 'var(--risk-high)' : score >= 25 ? 'var(--risk-medium)' : 'var(--risk-low)';
+
+  container.innerHTML = `
+    <div class="mb-4">
+      <div class="flex-between mb-1">
+        <span class="text-sm font-semibold text-secondary">Overall Risk Score</span>
+        <span class="font-bold" style="color: ${scoreColor}">${score} / 100</span>
+      </div>
+      <div style="height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;">
+        <div style="height:100%; width:${scoreBarWidth}%; background: ${scoreColor}; border-radius:4px; transition: width 0.6s ease;"></div>
+      </div>
+    </div>
+    ${factors.map(f => `
+      <div class="finding-item ${f.severity === 'CRITICAL' || f.severity === 'HIGH' ? 'danger' : 'warning'} mb-2">
+        <div class="finding-header">
+          <span class="badge badge-${f.severity === 'CRITICAL' || f.severity === 'HIGH' ? 'high' : 'medium'}">${escapeHtml(f.severity)}</span>
+          <span class="finding-title">${escapeHtml(f.category)}</span>
+          <span class="ml-auto text-sm font-mono" style="color:${scoreColor}">+${f.score} pts</span>
+        </div>
+        <p class="finding-desc">${escapeHtml(f.detail)}</p>
+      </div>
+    `).join('')}
+  `;
+}
+
 function renderAttackSurface(crawlRes) {
   const linksContainer = document.getElementById('discovered-links-list');
   const formsContainer = document.getElementById('discovered-forms-list');
